@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🌐 Translator App with Voice & Playback</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 400px;
+      text-align: center;
+    }
+    input, select, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #history {
+      text-align: left;
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🌐 Translator with Voice</h2>
+    <input type="text" id="textInput" placeholder="Type text here or use Speak..." />
+    <button id="speakButton">🎤 Speak</button>
+    <select id="languageSelect">
+      <option value="kn">Kannada</option>
+      <option value="hi">Hindi</option>
+      <option value="ta">Tamil</option>
+      <option value="te">Telugu</option>
+      <option value="mr">Marathi</option>
+    </select>
+    <button id="translateButton">Translate</button>
+    <button id="listenButton">🔊 Listen</button>
+    <p id="result"></p>
+    <div id="history">
+      <strong>History:</strong>
+      <ul id="historyList"></ul>
+    </div>
+  </div>
+
+  <script>
+    const textInput = document.getElementById('textInput');
+    const speakButton = document.getElementById('speakButton');
+    const translateButton = document.getElementById('translateButton');
+    const listenButton = document.getElementById('listenButton');
+    const result = document.getElementById('result');
+    const historyList = document.getElementById('historyList');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+
+    speakButton.addEventListener('click', () => {
+      recognition.start();
+    });
+
+    recognition.onresult = (event) => {
+      textInput.value = event.results[0][0].transcript;
+    };
+
+    recognition.onerror = (event) => {
+      alert('Voice capture failed. Try again.');
+    };
+
+    translateButton.addEventListener('click', async () => {
+      const text = textInput.value.trim();
+      const to = document.getElementById('languageSelect').value;
+
+      if (!text) return alert('Please enter text.');
+
+      const url = `https://verbose-rotary-phone-x5v5vv46rgrj36p5p-7071.app.github.dev/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
+
+      try {
+        result.innerText = 'Translating...';
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const data = await response.json();
+
+        const translated = data[0].translations[0].text;
+        result.innerText = `✅ ${translated}`;
+
+        // Add to history
+        const li = document.createElement('li');
+        li.textContent = `"${text}" → ${translated} (${to})`;
+        historyList.prepend(li);
+      } catch (error) {
+        result.innerText = '❌ Error contacting translation function.';
+        console.error(error);
+      }
+    });
+
+    listenButton.addEventListener('click', () => {
+      const utterance = new SpeechSynthesisUtterance(result.innerText.replace(/^✅\s*/, ''));
+      speechSynthesis.speak(utterance);
+    });
+  </script>
+</body>
+</html>

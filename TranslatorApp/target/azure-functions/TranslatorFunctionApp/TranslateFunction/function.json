@@ -1,0 +1,16 @@
+{
+  "scriptFile" : "../TranslatorApp-1.0-SNAPSHOT.jar",
+  "entryPoint" : "com.vaibhavi.function.TranslateFunction.run",
+  "bindings" : [ {
+    "type" : "httpTrigger",
+    "direction" : "in",
+    "name" : "req",
+    "route" : "TranslateFunction",
+    "methods" : [ "GET", "OPTIONS" ],
+    "authLevel" : "ANONYMOUS"
+  }, {
+    "type" : "http",
+    "direction" : "out",
+    "name" : "$return"
+  } ]
+}

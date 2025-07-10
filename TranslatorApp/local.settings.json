@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "java",
+    "TRANSLATOR_KEY": "G4RI75TXH7dgmkwb94OQ181I2G6opw2Th1KkGMWIR9cpNTMFjDyMJQQJ99BFACGhslBXJ3w3AAAbACOGEjLU",
+    "TRANSLATOR_ENDPOINT": "https://api.cognitive.microsofttranslator.com",
+    "TRANSLATOR_REGION": "centralindia",
+    "...": "\u001b"
+  },
+  "ConnectionStrings": {}
+}
