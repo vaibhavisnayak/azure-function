@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "java mvn azure-functions:run",
+    "TRANSLATOR_KEY": "G4RI75TXH7dgmkwb94OQ181I2G6opw2Th1KkGMWIR9cpNTMFjDyMJQQJ99BFACGhslBXJ3w3AAAbACOGEjLU",
+    "TRANSLATOR_ENDPOINT": "https://api.cognitive.microsofttranslator.com",
+    "TRANSLATOR_REGION": "centralindia"
+  },
+  "Host": {
+    "CORS":
+    {"allowedOrigins": [ "https://verbose-rotary-phone-x5v5vv46rgrj36p5p-5502.app.github.dev",
+            "https://verbose-rotary-phone-x5v5vv46rgrj36p5p-5501.app.github.dev"]
+  }
+  }
+}
