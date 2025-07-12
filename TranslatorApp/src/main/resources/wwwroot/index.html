@@ -2,57 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🌐 Translator App with Voice & Playback</title>
+  <title>🌐 Voice Translator</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      color: #333;
     }
     .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 400px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 500px;
+      padding: 40px 30px;
       text-align: center;
+    }
+    h2 {
+      margin-bottom: 25px;
+      color: #333;
     }
     input, select, button {
       width: 100%;
       margin: 10px 0;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: box-shadow 0.2s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
     }
     button {
-      cursor: pointer;
-      background: #3498db;
+      background: #667eea;
       color: #fff;
-      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
     button:hover {
-      background: #2980b9;
+      background: #5a67d8;
+    }
+    .mic-button {
+      background: #764ba2;
+      font-size: 20px;
+    }
+    .mic-button.listening {
+      background: #48bb78;
     }
     #result {
       margin-top: 20px;
       font-weight: bold;
+      min-height: 24px;
+      color: #2c3e50;
+      font-size: 18px;
     }
     #history {
+      margin-top: 25px;
       text-align: left;
-      margin-top: 20px;
-      font-size: 0.9em;
-      color: #444;
+    }
+    #history strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    #historyList {
+      list-style: disc inside;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    #historyList li {
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>🌐 Translator with Voice</h2>
-    <input type="text" id="textInput" placeholder="Type text here or use Speak..." />
-    <button id="speakButton">🎤 Speak</button>
+    <h2>🌐 Voice Translator</h2>
+    <input type="text" id="textInput" placeholder="Type or use the mic..." />
+    <button id="speakButton" class="mic-button">🎤 Speak</button>
     <select id="languageSelect">
       <option value="kn">Kannada</option>
       <option value="hi">Hindi</option>
@@ -83,36 +118,50 @@
 
     speakButton.addEventListener('click', () => {
       recognition.start();
+      speakButton.classList.add('listening');
+      speakButton.textContent = '🎙️ Listening...';
     });
 
     recognition.onresult = (event) => {
-      textInput.value = event.results[0][0].transcript;
+      const transcript = event.results[0][0].transcript;
+      textInput.value = transcript;
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
     };
 
     recognition.onerror = (event) => {
-      alert('Voice capture failed. Try again.');
+      alert('Voice capture failed: ' + event.error);
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
     };
 
     translateButton.addEventListener('click', async () => {
       const text = textInput.value.trim();
       const to = document.getElementById('languageSelect').value;
 
-      if (!text) return alert('Please enter text.');
+      if (!text) {
+        alert('Please enter some text.');
+        return;
+      }
 
-      const url = `https://verbose-rotary-phone-x5v5vv46rgrj36p5p-7071.app.github.dev/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
+      const url = `https://YOUR-FUNCTION-URL/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
 
       try {
-        result.innerText = 'Translating...';
+        result.innerText = '⏳ Translating...';
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        const data = await response.json();
 
-        const translated = data[0].translations[0].text;
+        const data = await response.json();
+        const translated = data[0].translations[0].text || 'Translation failed.';
         result.innerText = `✅ ${translated}`;
 
-        // Add to history
         const li = document.createElement('li');
-        li.textContent = `"${text}" → ${translated} (${to})`;
+        li.textContent = `"${text}" → ${translated} [${to}]`;
         historyList.prepend(li);
       } catch (error) {
         result.innerText = '❌ Error contacting translation function.';
@@ -121,8 +170,13 @@
     });
 
     listenButton.addEventListener('click', () => {
-      const utterance = new SpeechSynthesisUtterance(result.innerText.replace(/^✅\s*/, ''));
-      speechSynthesis.speak(utterance);
+      const translatedText = result.innerText.replace(/^✅\s*/, '');
+      if (translatedText) {
+        const utterance = new SpeechSynthesisUtterance(translatedText);
+        speechSynthesis.speak(utterance);
+      } else {
+        alert('Nothing to read.');
+      }
     });
   </script>
 </body>
