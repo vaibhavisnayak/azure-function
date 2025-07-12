@@ -2,135 +2,183 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🌐 Translator App</title>
+  <title>🌐 Voice Translator</title>
   <style>
-    /* 🌈 Global styles */
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
-      color: #333;
-      margin: 0;
-      padding: 0;
-      display: flex;
+      background: linear-gradient(135deg, #667eea, #764ba2);
       height: 100vh;
-      align-items: center;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
       justify-content: center;
+      align-items: center;
+      color: #333;
     }
-
     .container {
-      background: #fff;
-      border-radius: 12px;
-      padding: 40px;
-      max-width: 400px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
       width: 90%;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      padding: 40px 30px;
       text-align: center;
     }
-
-    h1 {
-      margin-bottom: 24px;
-      color: #2c3e50;
+    h2 {
+      margin-bottom: 25px;
+      color: #333;
     }
-
-    label {
-      display: block;
-      margin-top: 16px;
-      font-weight: 600;
-    }
-
-    input[type="text"],
-    select {
+    input, select, button {
       width: 100%;
-      padding: 12px 16px;
-      margin-top: 8px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border 0.3s ease;
-    }
-
-    input[type="text"]:focus,
-    select:focus {
-      border: 1px solid #3498db;
-      outline: none;
-    }
-
-    button {
-      margin-top: 24px;
-      padding: 12px 24px;
-      font-size: 1rem;
-      background: #3498db;
-      color: #fff;
+      margin: 10px 0;
+      padding: 14px;
       border: none;
       border-radius: 8px;
+      font-size: 16px;
+      transition: box-shadow 0.2s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
+    }
+    button {
+      background: #667eea;
+      color: #fff;
       cursor: pointer;
       transition: background 0.3s ease;
     }
-
     button:hover {
-      background: #2980b9;
+      background: #5a67d8;
     }
-
-    h2 {
-      margin-top: 32px;
-      font-size: 1.2rem;
-      color: #2c3e50;
+    .mic-button {
+      background: #764ba2;
+      font-size: 20px;
     }
-
+    .mic-button.listening {
+      background: #48bb78;
+    }
     #result {
-      margin-top: 12px;
+      margin-top: 20px;
       font-weight: bold;
-      color: #27ae60;
+      min-height: 24px;
+      color: #2c3e50;
+      font-size: 18px;
+    }
+    #history {
+      margin-top: 25px;
+      text-align: left;
+    }
+    #history strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    #historyList {
+      list-style: disc inside;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    #historyList li {
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🌐 Translate Text</h1>
-
-    <label for="textInput">Enter text:</label>
-    <input type="text" id="textInput" placeholder="Type here..." />
-
-    <label for="languageSelect">Select language:</label>
+    <h2>🌐 Voice Translator</h2>
+    <input type="text" id="textInput" placeholder="Type or use the mic..." />
+    <button id="speakButton" class="mic-button">🎤 Speak</button>
     <select id="languageSelect">
       <option value="kn">Kannada</option>
       <option value="hi">Hindi</option>
       <option value="ta">Tamil</option>
       <option value="te">Telugu</option>
       <option value="mr">Marathi</option>
-      <!-- Add more as needed -->
     </select>
-
     <button id="translateButton">Translate</button>
-
-    <h2>Translation:</h2>
+    <button id="listenButton">🔊 Listen</button>
     <p id="result"></p>
+    <div id="history">
+      <strong>History:</strong>
+      <ul id="historyList"></ul>
+    </div>
   </div>
 
   <script>
+    const textInput = document.getElementById('textInput');
+    const speakButton = document.getElementById('speakButton');
     const translateButton = document.getElementById('translateButton');
+    const listenButton = document.getElementById('listenButton');
+    const result = document.getElementById('result');
+    const historyList = document.getElementById('historyList');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+
+    speakButton.addEventListener('click', () => {
+      recognition.start();
+      speakButton.classList.add('listening');
+      speakButton.textContent = '🎙️ Listening...';
+    });
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      textInput.value = transcript;
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
+    };
+
+    recognition.onerror = (event) => {
+      alert('Voice capture failed: ' + event.error);
+      speakButton.textContent = '🎤 Speak';
+      speakButton.classList.remove('listening');
+    };
+
     translateButton.addEventListener('click', async () => {
-      const text = document.getElementById('textInput').value.trim();
-      const language = document.getElementById('languageSelect').value;
+      const text = textInput.value.trim();
+      const to = document.getElementById('languageSelect').value;
 
       if (!text) {
-        alert('Please enter text to translate.');
+        alert('Please enter some text.');
         return;
       }
 
-      const encodedText = encodeURIComponent(text);
-     const url = `https://verbose-rotary-phone-x5v5vv46rgrj36p5p-7071.app.github.dev/api/TranslateFunction?text=${encodedText}&to=${language}`;
+      const url = `https://YOUR-FUNCTION-URL/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
+
+      // ✅ Open the translation URL in a new tab
+      window.open(url, '_blank');
 
       try {
+        result.innerText = '⏳ Translating...';
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
         const data = await response.json();
+        const translated = data[0].translations[0].text || 'Translation failed.';
+        result.innerText = `✅ ${translated}`;
 
-        const translated = data[0].translations[0].text;
-
-        document.getElementById('result').innerText = translated;
+        const li = document.createElement('li');
+        li.textContent = `"${text}" → ${translated} [${to}]`;
+        historyList.prepend(li);
       } catch (error) {
+        result.innerText = '❌ Error contacting translation function.';
         console.error(error);
-        alert('Error calling the translation function.');
+      }
+    });
+
+    listenButton.addEventListener('click', () => {
+      const translatedText = result.innerText.replace(/^✅\s*/, '');
+      if (translatedText) {
+        const utterance = new SpeechSynthesisUtterance(translatedText);
+        speechSynthesis.speak(utterance);
+      } else {
+        alert('Nothing to read.');
       }
     });
   </script>
