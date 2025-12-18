@@ -2,22 +2,21 @@ package com.vaibhavi.function;
 
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
-
 import java.net.http.*;
 import java.net.URI;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Optional;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-/**
- * Azure Function to handle translation requests using Microsoft Translator API.
- */
 public class TranslateFunction {
+
+    // 🔴 CRITICAL: This variable is set ONLY when the Azure server starts (Cold Start)
+    private static final long CONTAINER_START_TIME = System.currentTimeMillis();
+
     // Securely read environment variables
     private static final String SUBSCRIPTION_KEY = System.getenv("TRANSLATOR_KEY");
     private static final String ENDPOINT = System.getenv("TRANSLATOR_ENDPOINT");
@@ -33,7 +32,15 @@ public class TranslateFunction {
         HttpRequestMessage<Optional<String>> request,
         final ExecutionContext context) {
 
-        // Handle CORS preflight request
+        // ⏱️ START TIMER
+        long executionStartTime = System.currentTimeMillis();
+
+        // 📊 METRIC 1: Calculate how old the container is
+        // If age < 1000ms, it is a COLD START.
+        long containerAge = executionStartTime - CONTAINER_START_TIME;
+        context.getLogger().info("METRIC_ContainerAge=" + containerAge);
+
+        // Handle CORS (Standard code)
         if (request.getHttpMethod() == HttpMethod.OPTIONS) {
             return request.createResponseBuilder(HttpStatus.OK)
                 .header("Access-Control-Allow-Origin", "*")
@@ -42,23 +49,18 @@ public class TranslateFunction {
                 .build();
         }
 
-        // Extract query parameters
         String text = request.getQueryParameters().get("text");
         String to = request.getQueryParameters().get("to");
 
-        // Validate input
         if (text == null || to == null) {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                .header("Access-Control-Allow-Origin", "*")
                 .body("Please provide 'text' and 'to' query parameters.")
                 .build();
         }
 
         try {
-            // Construct request to Microsoft Translator API
             HttpClient client = HttpClient.newHttpClient();
             URI uri = URI.create(ENDPOINT + "/translate?api-version=3.0&to=" + to);
-
             String body = "[{\"Text\":\"" + text + "\"}]";
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -75,12 +77,10 @@ public class TranslateFunction {
                 throw new RuntimeException("Translation API error: " + response.body());
             }
 
-            // Parse API response
             ObjectMapper mapper = new ObjectMapper();
             JsonNode apiResponseJson = mapper.readTree(response.body());
             String translatedText = apiResponseJson.get(0).get("translations").get(0).get("text").asText();
 
-            // Build JSON result
             ObjectNode translation = mapper.createObjectNode();
             translation.put("text", translatedText);
             ArrayNode translations = mapper.createArrayNode();
@@ -88,18 +88,22 @@ public class TranslateFunction {
             ObjectNode result = mapper.createObjectNode();
             result.set("translations", translations);
 
-            String resultJson = mapper.writeValueAsString(result);
+            // ⏱️ STOP TIMER
+            long executionEndTime = System.currentTimeMillis();
+            long duration = executionEndTime - executionStartTime;
+
+            // 📊 METRIC 2: Log how long execution took
+            context.getLogger().info("METRIC_ExecTime=" + duration);
 
             return request.createResponseBuilder(HttpStatus.OK)
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Type", "application/json")
-                .body(resultJson)
+                .body(mapper.writeValueAsString(result))
                 .build();
 
         } catch (Exception e) {
             context.getLogger().severe("Translation error: " + e.getMessage());
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
-                .header("Access-Control-Allow-Origin", "*")
                 .body("Error during translation: " + e.getMessage())
                 .build();
         }
