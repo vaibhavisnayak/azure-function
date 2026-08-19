@@ -149,10 +149,12 @@
         return;
       }
 
-      const url = `https://YOUR-FUNCTION-URL/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
-
-      // ✅ Open the translation URL in a new tab
-      window.open(url, '_blank');
+      // Auto-detect backend API URL: use localhost:7071 if running frontend locally
+      let apiBaseUrl = 'https://demovaibhavi.azurewebsites.net';
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        apiBaseUrl = 'http://localhost:7071';
+      }
+      const url = `${apiBaseUrl}/api/TranslateFunction?text=${encodeURIComponent(text)}&to=${to}`;
 
       try {
         result.innerText = '⏳ Translating...';
@@ -160,7 +162,7 @@
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
         const data = await response.json();
-        const translated = data[0].translations[0].text || 'Translation failed.';
+        const translated = (data && data.translations && data.translations[0] && data.translations[0].text) || 'Translation failed.';
         result.innerText = `✅ ${translated}`;
 
         const li = document.createElement('li');
